@@ -169,30 +169,33 @@ ID3D11Texture2D* WinDesktopDup::CaptureNext()
 		return nullptr;
 	}
 
-	//bool ok = true;
+	if (copytocpu)
+	{
+		bool ok = true;
 
-	//D3D11_TEXTURE2D_DESC desc;
-	//gpuTex->GetDesc(&desc);
-	//desc.CPUAccessFlags     = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
-	//desc.Usage              = D3D11_USAGE_STAGING;
-	//desc.BindFlags          = 0;
-	//desc.MiscFlags          = 0; // D3D11_RESOURCE_MISC_GDI_COMPATIBLE ?
-	//ID3D11Texture2D* cpuTex = nullptr;
-	//hr                      = D3DDevice->CreateTexture2D(&desc, nullptr, &cpuTex);
-	//if (SUCCEEDED(hr)) 
-	//{
-	//	D3DDeviceContext->CopyResource(cpuTex, gpuTex);
-	//} 
-	//else 
-	//{
-	//	// not expected
-	//	ok = false;
-	//	hr = 0;
-	//	hr = D3DDevice->GetDeviceRemovedReason();
-	//}
+		D3D11_TEXTURE2D_DESC desc;
+		gpuTex->GetDesc(&desc);
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE | D3D11_CPU_ACCESS_READ;
+		desc.Usage = D3D11_USAGE_STAGING;
+		desc.BindFlags = 0;
+		desc.MiscFlags = 0; // D3D11_RESOURCE_MISC_GDI_COMPATIBLE ?
+		ID3D11Texture2D* cpuTex = nullptr;
+		hr = D3DDevice->CreateTexture2D(&desc, nullptr, &cpuTex);
+		if (SUCCEEDED(hr))
+		{
+			D3DDeviceContext->CopyResource(cpuTex, gpuTex);
+		}
+		else
+		{
+			// not expected
+			ok = false;
+			hr = 0;
+			hr = D3DDevice->GetDeviceRemovedReason();
+		}
 
-	//cpuTex->Release();
-	//gpuTex->Release();
+		gpuTex->Release();
+		return cpuTex;
+	}
 
 	return gpuTex;
 }

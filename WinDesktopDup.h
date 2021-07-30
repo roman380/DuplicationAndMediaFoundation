@@ -55,6 +55,7 @@ public:
 	ID3D11Texture2D* CaptureNext();
 
 	ID3D11Device* D3DDevice = nullptr;
+	bool			copytocpu = false;
 
 private:
 	
@@ -62,4 +63,6 @@ private:
 	IDXGIOutputDuplication* DeskDupl         = nullptr;
 	DXGI_OUTPUT_DESC        OutputDesc;
 	bool                    HaveFrameLock = false;
+	
 };
+
