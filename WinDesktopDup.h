@@ -29,8 +29,13 @@
 #include <functional>
 #include <vector>
 
-#include <d3d11.h>
+#include <d3d11_4.h>
 #include <dxgi1_2.h>
+
+#pragma warning(disable: 4778) // 'printf' : unterminated format string '%v'
+#pragma warning(disable: 4474) // 'printf' : too many arguments passed for format string
+
+#include <assert.h>
 
 typedef std::string Error;
 
@@ -56,13 +61,14 @@ public:
 
 	ID3D11Device* D3DDevice = nullptr;
 	bool			copytocpu = false;
+	bool			copytogpu = true;
 
 private:
 	
 	ID3D11DeviceContext*    D3DDeviceContext = nullptr;
 	IDXGIOutputDuplication* DeskDupl         = nullptr;
 	DXGI_OUTPUT_DESC        OutputDesc;
-	bool                    HaveFrameLock = false;
+	//bool                    HaveFrameLock = false;
 	
 };
 
