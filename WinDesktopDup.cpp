@@ -51,6 +51,10 @@ Error WinDesktopDup::Initialize()
 	if (FAILED(hr))
 		printf("D3D11CreateDevice failed: %v", hr);
 
+	ID3D11Multithread* Multithread;
+	D3DDevice->QueryInterface(IID_PPV_ARGS(&Multithread));
+	Multithread->SetMultithreadProtected(TRUE);
+
 	// Initialize the Desktop Duplication system
 	//m_OutputNumber = Output;
 
@@ -120,7 +124,6 @@ void WinDesktopDup::Close()
 	DeskDupl         = nullptr;
 	D3DDeviceContext = nullptr;
 	D3DDevice        = nullptr;
-	HaveFrameLock    = false;
 }
 
 ID3D11Texture2D* WinDesktopDup::CaptureNext() 
@@ -129,16 +132,6 @@ ID3D11Texture2D* WinDesktopDup::CaptureNext()
 		return nullptr;
 
 	HRESULT hr;
-
-	// according to the docs, it's best for performance if we hang onto the frame for as long as possible,
-	// and only release the previous frame immediately before acquiring the next one. Something about
-	// the OS coalescing updates, so that it doesn't have to store them as distinct things.
-	if (HaveFrameLock) 
-	{
-		HaveFrameLock = false;
-		hr            = DeskDupl->ReleaseFrame();
-		// ignore response
-	}
 
 	IDXGIResource*          deskRes = nullptr;
 	DXGI_OUTDUPL_FRAME_INFO frameInfo;
@@ -156,8 +149,6 @@ ID3D11Texture2D* WinDesktopDup::CaptureNext()
 		printf("Acquire failed: %x\n", hr);
 		return nullptr;
 	}
-
-	HaveFrameLock = true;
 
 	ID3D11Texture2D* gpuTex = nullptr;
 	hr                      = deskRes->QueryInterface(__uuidof(ID3D11Texture2D), (void**) &gpuTex);
@@ -194,8 +185,25 @@ ID3D11Texture2D* WinDesktopDup::CaptureNext()
 		}
 
 		gpuTex->Release();
+		hr = DeskDupl->ReleaseFrame();
+		assert(SUCCEEDED(hr));
 		return cpuTex;
 	}
+	if (copytogpu)
+	{
+		D3D11_TEXTURE2D_DESC desc;
+		gpuTex->GetDesc(&desc);
+		CD3D11_TEXTURE2D_DESC CopyDesc(desc.Format, desc.Width, desc.Height, 1, 1);
+		ID3D11Texture2D* CopyTex = nullptr;
+		hr = D3DDevice->CreateTexture2D(&CopyDesc, nullptr, &CopyTex);
+		assert(SUCCEEDED(hr));
+		D3DDeviceContext->CopyResource(CopyTex, gpuTex);
+		gpuTex->Release();
+		hr = DeskDupl->ReleaseFrame();
+		assert(SUCCEEDED(hr));
+		return CopyTex;
+	}
 
+	hr = DeskDupl->ReleaseFrame();
 	return gpuTex;
 }
