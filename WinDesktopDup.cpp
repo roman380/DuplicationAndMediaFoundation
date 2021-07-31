@@ -53,7 +53,8 @@ Error WinDesktopDup::Initialize()
 
 	ID3D11Multithread* Multithread;
 	D3DDevice->QueryInterface(IID_PPV_ARGS(&Multithread));
-	Multithread->SetMultithreadProtected(TRUE);
+	Multithread->SetMultithreadProtected(TRUE); // https://stackoverflow.com/a/40946862/868014
+	Multithread->Release();
 
 	// Initialize the Desktop Duplication system
 	//m_OutputNumber = Output;
@@ -197,6 +198,10 @@ ID3D11Texture2D* WinDesktopDup::CaptureNext()
 		ID3D11Texture2D* CopyTex = nullptr;
 		hr = D3DDevice->CreateTexture2D(&CopyDesc, nullptr, &CopyTex);
 		assert(SUCCEEDED(hr));
+		// NOTE: gpuTex is invalidated with ReleaseFrame frame and the outer code has no obligations on when the texture is actually released; 
+		//       in particular Media Foundation hardware encoder transforms make no promises to get hands off the texture within the
+		//       IMFTransform::ProcessInput call; so it takes to make a copy of the texture here, and this copy is actually not an expensive operation.
+		//       See also https://stackoverflow.com/a/48279602/868014
 		D3DDeviceContext->CopyResource(CopyTex, gpuTex);
 		gpuTex->Release();
 		hr = DeskDupl->ReleaseFrame();
