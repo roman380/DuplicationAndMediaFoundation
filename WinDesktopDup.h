@@ -10,6 +10,7 @@
 #pragma comment(lib, "mfplat")
 #pragma comment(lib, "mfuuid")
 #pragma comment(lib, "Evr")
+#pragma comment(lib, "wmcodecdspuuid.lib")
 #include <atlbase.h>
 #include <vector>
 
